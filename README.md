@@ -247,61 +247,39 @@ printf("Child %d exited with status %d\n", child_pid, status);
 
 #### TODO 1: Create Pipe for Communication
 
-```c
-int pipe_fd[2];
-if (pipe(pipe_fd) == -1) {
-    perror("pipe");
-    return -1;
-}
-```
+You need to create a pipe that will allow the producer and consumer processes to communicate. Remember to check for errors when creating the pipe, as system calls can fail.
+
+**Hint:** Use the pipe() system call to create an array of two file descriptors. Don't forget to handle the case where pipe creation fails.
 
 #### TODO 2: Fork Producer Process
 
-```c
-producer_pid = fork();
-if (producer_pid == 0) {
-    // Child process - becomes producer
-    close(pipe_fd[0]); // Close read end
-    producer_process(pipe_fd[1], 1); // Start with number 1
-} else if (producer_pid > 0) {
-    printf("Created producer child (PID: %d)\n", producer_pid);
-} else {
-    perror("fork");
-    return -1;
-}
-```
+Create a child process that will act as the producer. The child process should close the appropriate pipe end and call the producer function, while the parent should store the child's PID and continue.
+
+**Hint:** Use fork() and check its return value. Child processes (return value 0) should become producers, parent processes (positive return value) should continue, and errors (negative return value) should be handled appropriately.
 
 #### TODO 3: Fork Consumer Process
 
-```c
-consumer_pid = fork();
-if (consumer_pid == 0) {
-    // Child process - becomes consumer
-    close(pipe_fd[1]); // Close write end
-    consumer_process(pipe_fd[0], 0); // Pair ID 0 for basic demo
-} else if (consumer_pid > 0) {
-    printf("Created consumer child (PID: %d)\n", consumer_pid);
-} else {
-    perror("fork");
-    return -1;
-}
-```
+Create another child process that will act as the consumer. Similar to the producer, the child should close the appropriate pipe end and call the consumer function.
+
+**Hint:** This follows the same pattern as the producer fork, but the child calls the consumer function instead. Make sure to close the correct pipe end for reading vs writing.
 
 #### TODO 4: Parent Cleanup and Wait
 
-```c
-// Parent doesn't use pipe, so close both ends
-close(pipe_fd[0]);
-close(pipe_fd[1]);
+The parent process needs to clean up its resources and wait for both child processes to complete. This prevents zombie processes and ensures proper resource management.
 
-// Wait for both children to complete
-int status;
-waitpid(producer_pid, &status, 0);
-printf("Producer child (PID: %d) exited with status %d\n", producer_pid, status);
+**Hint:** Close both pipe ends in the parent (since it doesn't use them), then use waitpid() to wait for each child process individually. Print the exit status of each child.
 
-waitpid(consumer_pid, &status, 0);
-printf("Consumer child (PID: %d) exited with status %d\n", consumer_pid, status);
-```
+#### TODO 5: Multiple Pairs Loop Structure
+
+For the multiple pairs function, you'll need to create several producer-consumer pairs in a loop. Each pair needs its own pipe and should use different number ranges.
+
+**Hint:** Use a loop to create multiple pairs, where each iteration creates a new pipe and forks two processes. Keep track of all child PIDs so you can wait for them later.
+
+#### TODO 6: Multiple Pairs Cleanup
+
+Wait for all child processes from all pairs to complete. This ensures that no zombie processes are left behind.
+
+**Hint:** You'll need to wait for each child process that was created. Consider using an array or list to track all the child PIDs from both producers and consumers.
 
 #### Why These Concepts Matter
 
@@ -371,7 +349,7 @@ After completing your work:
 
 ```
 git add .
-git commit -m "completed lab 2 - process information reader"
+git commit -m "completed lab 3 - basic process management and IPC"
 git push origin main
 ```
 
